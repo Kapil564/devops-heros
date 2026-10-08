@@ -1,0 +1,49 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stable-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: canary-app
+  template:
+    metadata:
+      labels:
+        app: canary-app
+        track: stable
+    spec:
+      containers:
+      - name: app
+        image: nginx:1.24
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canary-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: canary-app
+  template:
+    metadata:
+      labels:
+        app: canary-app
+        track: canary
+    spec:
+      containers:
+      - name: app
+        image: nginx:1.25
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: canary-svc
+spec:
+  selector:
+    app: canary-app # Routes traffic to both stable and canary based on replicas count
+  ports:
+  - port: 80
+    targetPort: 80

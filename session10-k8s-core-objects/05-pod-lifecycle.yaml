@@ -1,0 +1,43 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: running-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pending-pod
+spec:
+  containers:
+  - name: heavy-app
+    image: nginx
+    resources:
+      requests:
+        cpu: "100" # Impossible to fulfill on Minikube, so it stays Pending
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: succeeded-pod
+spec:
+  restartPolicy: Never
+  containers:
+  - name: job
+    image: busybox
+    command: ["sh", "-c", "echo 'I finished successfully!'; exit 0"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: failed-pod
+spec:
+  restartPolicy: Never
+  containers:
+  - name: job
+    image: busybox
+    command: ["sh", "-c", "echo 'I failed!'; exit 1"]
