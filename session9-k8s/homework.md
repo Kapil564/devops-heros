@@ -33,7 +33,7 @@ kubectl get pods
 ```
 **Output:**
 ```text
-NAME     READY   STATUS              RESTARTS   AGE
-hello    0/1     ContainerCreating   0          16s
-my-pod   0/1     ContainerCreating   0          6s
+NAME     READY   STATUS           RESTARTS        AGE
+hello    0/1     Running             0              16s
+my-pod   0/1     Running             0              6s
 ```

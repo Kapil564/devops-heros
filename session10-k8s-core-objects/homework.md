@@ -1,4 +1,5 @@
 - https://github.com/Nency-Ravaliya/Kubernetes 
+
 - k8s core objects: https://github.com/Nency-Ravaliya/Kubernetes/blob/main/core-objects.md 
 
 ---
@@ -21,8 +22,7 @@ kubectl set image deployment/rolling-update-deploy nginx=nginx:1.25
 # 3. Watch the old pods terminate and new ones create
 kubectl get pods -w
 ```
-*(Insert your screenshot here)*
-
+![alt text](image.png)
 ---
 
 ### 02. Blue-Green Deployment
@@ -39,7 +39,7 @@ kubectl patch service blue-green-svc -p "{\"spec\":{\"selector\":{\"version\":\"
 # 3. Verify the service is now selecting the green pods
 kubectl describe service blue-green-svc
 ```
-*(Insert your screenshot here)*
+![alt text](image-1.png)
 
 ---
 
@@ -54,7 +54,7 @@ kubectl apply -f 03-canary.yaml
 # 2. View all pods with their labels to see the 3:1 ratio
 kubectl get pods -L track
 ```
-*(Insert your screenshot here)*
+![alt text](image-2.png)
 
 ---
 
@@ -72,7 +72,7 @@ kubectl set image deployment/recreate-deploy nginx=nginx:1.25
 # 3. Watch the pods: you will see all old ones terminate before any new ones spin up
 kubectl get pods -w
 ```
-*(Insert your screenshot here)*
+![alt text](image-3.png)
 
 ---
 
@@ -96,4 +96,4 @@ kubectl get pods
 kubectl describe pod pending-pod
 ```
 
-*(Insert your screenshots here)*
+![alt text](image-4.png)
