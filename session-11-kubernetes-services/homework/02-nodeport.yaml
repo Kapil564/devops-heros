@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-nodeport
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-nodeport
+  template:
+    metadata:
+      labels:
+        app: web-nodeport
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-nodeport
+spec:
+  type: NodePort
+  selector:
+    app: web-nodeport
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-headless
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-headless
+  template:
+    metadata:
+      labels:
+        app: web-headless
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-headless
+spec:
+  clusterIP: None
+  selector:
+    app: web-headless
+  ports:
+  - port: 80
+    targetPort: 80
