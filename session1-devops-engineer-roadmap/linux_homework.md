@@ -41,7 +41,7 @@ rm hardlink.txt
 ```
 
 ### 💡 Interview Prep: "What is the difference between a Soft Link and a Hard Link?"
-> *"A soft link is essentially a pointer to a file's name, much like a desktop shortcut. If the original file is deleted, the soft link breaks. It can cross file systems and link to directories. A hard link, on the other hand, points directly to the underlying data block (inode) on the disk. Deleting the original file won't break the hard link, as long as one link remains. Hard links cannot span across different file systems and cannot link to directories."*
+ *"A soft link is essentially a pointer to a file's name, much like a desktop shortcut. If the original file is deleted, the soft link breaks. It can cross file systems and link to directories. A hard link, on the other hand, points directly to the underlying data block (inode) on the disk. Deleting the original file won't break the hard link, as long as one link remains. Hard links cannot span across different file systems and cannot link to directories."*
 
 ---
 
@@ -96,40 +96,3 @@ journalctl -u nginx.service
 # View logs for a service since the system booted
 journalctl -u docker.service -b
 ```
-
----
-
-## Task 4: Linux Command Cheat Sheet
-
-Here are essential Linux commands you should practice and understand for a DevOps role:
-
-### Navigation & File Management
-*   `pwd` - Print working directory (where am I?).
-*   `ls -la` - List files, including hidden ones, in a long format.
-*   `cd /path` - Change directory.
-*   `mkdir <dir_name>` - Create a new directory.
-*   `cp <source> <destination>` - Copy files/directories (use `-r` for recursive).
-*   `mv <source> <destination>` - Move or rename files/directories.
-*   `rm <file>` - Remove a file (use `rm -rf <dir>` to forcefully remove a directory).
-
-### File Viewing & Manipulation
-*   `cat <file>` - Output the entire contents of a file.
-*   `less <file>` - View file contents page by page (good for large files).
-*   `tail -f <file>` - Output the last 10 lines of a file and follow updates live.
-*   `grep "pattern" <file>` - Search for a specific word/pattern inside a file.
-
-### Permissions & Ownership
-*   `chmod 755 <file>` - Change file permissions (Read/Write/Execute).
-*   `chown user:group <file>` - Change file owner and group.
-
-### System & Processes
-*   `top` / `htop` - View live system resource usage (CPU, RAM, processes).
-*   `ps aux` - List all currently running processes.
-*   `kill <PID>` - Terminate a process using its Process ID.
-*   `df -h` - Show disk space usage in a human-readable format.
-*   `free -m` - Show available RAM in MB.
-
-### Networking
-*   `ping <host>` - Check connectivity to a host.
-*   `curl -I <url>` - Fetch HTTP headers from a URL.
-*   `netstat -tulpn` (or `ss -tulpn`) - List active listening ports and services.

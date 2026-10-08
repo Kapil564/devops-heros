@@ -5,16 +5,16 @@ This markdown file satisfies the requirement to have a unique `.md` file (other 
 ## System Information Script (`system_info.sh`)
 
 The script has been created with the following requirements fulfilled:
-- Prints the current date (`date`).
-- Prints the hostname (`hostname`).
-- Prints the username (`whoami`).
-- Prints the disk usage (`df -h`).
-- Prints running processes (`ps -ef`).
-- Uses variables to store data.
-- Takes user input using `read -p`.
-- Creates a directory using `mkdir`.
-- Creates a file using `touch`.
-- Stores the running processes information in the file using `>` output redirection.
+### `date` -> Prints the current date.
+### `hostname` -> Prints the hostname.
+### `whoami` -> Prints the username.
+### `df -h` -> Prints the disk usage.
+### `ps -ef` -> Prints the running processes.
+### `varible` -> Used to store data.
+### `read -p` -> Takes user input.
+### `mkdir` -> Creates a directory.
+### `touch` -> Creates a file.
+### `>` -> Stores the running processes information in the file.
 
 ---
 
@@ -56,11 +56,3 @@ root           2       0  0 Oct08 ?        00:00:00 [kthreadd]
 root           3       2  0 Oct08 ?        00:00:00 [rcu_gp]
 root           4       2  0 Oct08 ?        00:00:00 [rcu_par_gp]
 ```
-
-## GitHub Submission Instructions
-
-As per the task, to complete your submission:
-1. Make sure you initialize your GitHub repository or commit to your current branch.
-2. Run `git add system_info.sh session3_homework.md`
-3. Run `git commit -m "Add Session 3 shell scripting homework"`
-4. Push to your public GitHub repository (`git push`).
