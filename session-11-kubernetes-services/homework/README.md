@@ -1,8 +1,36 @@
 # Session 11: Kubernetes Networking & Services Homework
+# CoreDNS in Kubernetes
+
+## What is CoreDNS?
+CoreDNS is a flexible, extensible DNS server that serves as the default cluster DNS for Kubernetes. It is deployed as a set of Pods running inside the `kube-system` namespace.
+
+## Why Kubernetes uses CoreDNS
+Kubernetes needs a way for services to discover each other dynamically because Pod IPs are ephemeral (they change constantly). CoreDNS solves this by automatically maintaining a registry of DNS records that map predictable Service names to their current IPs.
+
+## How Service Discovery Works
+1. A Service is created.
+2. Kubernetes API informs CoreDNS.
+3. CoreDNS creates a DNS record (`A` record for the IP, `SRV` for ports).
+4. Any Pod can now resolve the Service name to its IP.
+
+## How DNS Queries are Resolved
+1. A Pod makes a network request (e.g., `curl http://backend-svc`).
+2. The Pod's `/etc/resolv.conf` directs the DNS query to the CoreDNS service IP.
+3. CoreDNS checks its records. If it's an internal Kubernetes name, it returns the ClusterIP. If it's an external name (like `google.com`), CoreDNS forwards the query to the upstream DNS server.
+
+## CoreDNS Configuration
+CoreDNS is configured via a Kubernetes ConfigMap named `coredns` in the `kube-system` namespace. The configuration file inside the ConfigMap is called the `Corefile`. It defines plugins (like `kubernetes`, `forward`, `errors`, `health`) that dictate how DNS requests are handled.
+
+## How to Troubleshoot DNS Issues
+1. **Check if CoreDNS pods are running:**
+   `kubectl get pods -n kube-system -l k8s-app=kube-dns`
+2. **Test DNS from a utility pod:**
+   `kubectl run -it --rm debug --image=busybox -- nslookup kubernetes.default`
+3. **Check CoreDNS logs:**
+   `kubectl logs -n kube-system -l k8s-app=kube-dns`
+4. **Verify the Pod's `/etc/resolv.conf`:** Ensure it points to the CoreDNS IP.
 
 ## Task 1: Kubernetes Services
-
-Below are the commands to run and test all 5 Service types. Run them, then insert your screenshots!
 
 ### 1. ClusterIP
 **Apply & Test:**
@@ -12,27 +40,26 @@ kubectl get svc svc-clusterip
 # To test connectivity, use a temporary busybox pod to curl the service
 kubectl run -i --tty --rm debug --image=busybox --restart=Never -- sh -c "wget -qO- http://svc-clusterip"
 ```
-*(Insert your screenshot here)*
+![alt text](image.png)
 
 ### 2. NodePort
 **Apply & Test:**
 ```bash
 kubectl apply -f 02-nodeport.yaml
 kubectl get svc svc-nodeport
-# To test (Minikube users):
-minikube service svc-nodeport --url
-# Then curl the URL provided by minikube
+kubectl port-forward service/svc-nodeport 8080:80
+
 ```
-*(Insert your screenshot here)*
+![alt text](image-1.png)
 
 ### 3. LoadBalancer
 **Apply & Test:**
 ```bash
 kubectl apply -f 03-loadbalancer.yaml
 kubectl get svc svc-lb
-# Note: On Minikube, the external IP stays pending unless you run `minikube tunnel` in a separate terminal.
+
 ```
-*(Insert your screenshot here)*
+
 
 ### 4. ExternalName
 **Apply & Test:**
@@ -40,17 +67,16 @@ kubectl get svc svc-lb
 kubectl apply -f 04-externalname.yaml
 kubectl get svc svc-externalname
 ```
-*(Insert your screenshot here)*
+![alt text](image-2.png)
 
 ### 5. Headless Service
 **Apply & Test:**
 ```bash
 kubectl apply -f 05-headless.yaml
 kubectl get svc svc-headless
-# Test DNS resolution using busybox (it should return the IPs of the individual pods instead of a single ClusterIP)
+
 kubectl run -i --tty --rm debug --image=busybox --restart=Never -- nslookup svc-headless
 ```
-*(Insert your screenshot here)*
 
 ---
 
