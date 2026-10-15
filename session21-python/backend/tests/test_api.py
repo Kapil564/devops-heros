@@ -7,14 +7,17 @@ from app.main import app
 client = TestClient(app)
 
 def test_health():
-    assert client.get("/health").json() == {"status": "UP"}
+    with TestClient(app) as c:
+        assert c.get("/health").json() == {"status": "UP"}
 
 def test_root():
-    response = client.get("/")
-    assert response.status_code == 200
-    assert response.json()["service"] == "TaskBoard API"
+    with TestClient(app) as c:
+        response = c.get("/")
+        assert response.status_code == 200
+        assert response.json()["service"] == "TaskBoard API"
 
 def test_create_task_validation():
-    response = client.post("/api/tasks", json={"title": "Deploy application", "priority": "HIGH", "assignee": "Student"})
-    assert response.status_code == 201
-    assert response.json()["title"] == "Deploy application"
+    with TestClient(app) as c:
+        response = c.post("/api/tasks", json={"title": "Deploy application", "priority": "HIGH", "assignee": "Student"})
+        assert response.status_code == 201
+        assert response.json()["title"] == "Deploy application"

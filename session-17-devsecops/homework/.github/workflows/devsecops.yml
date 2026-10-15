@@ -1,0 +1,197 @@
+name: Python DevSecOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  # 1. Build
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Syntax Check
+        run: python -m py_compile app/**/*.py
+
+  # 2. Unit Test
+  unit-test:
+    name: Unit Tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Run tests
+        run: pytest --cov=app --cov-report=term-missing
+
+  # 3. SAST
+  sast:
+    name: SAST - CodeQL
+    needs: unit-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+      - name: Analyze code
+        uses: github/codeql-action/analyze@v3
+
+  # 4. SCA
+  sca:
+    name: SCA - Dependency Scan
+    needs: unit-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pip-audit
+      - name: Run dependency scan
+        run: pip-audit
+
+  # 5. Secret Scan
+  secret-scan:
+    name: Secret Scan - TruffleHog/Gitleaks
+    needs: unit-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret Scanning
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  # 6. Docker Build
+  docker-build:
+    name: Docker Build
+    needs: [sast, sca, secret-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t session17-python:${{ github.sha }} .
+
+  # 7. Container Image Scan
+  image-scan:
+    name: Container Image Scan - Trivy
+    needs: docker-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Build Docker image (for scan)
+        run: docker build -t session17-python:${{ github.sha }} .
+      - name: Install Trivy
+        run: |
+          sudo apt-get install -y wget
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update && sudo apt-get install -y trivy
+      - name: Scan image
+        run: trivy image --format json --output trivy-results.json session17-python:${{ github.sha }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results
+          path: trivy-results.json
+
+  # 8. Security Gate
+  security-gate:
+    name: Security Gate
+    needs: image-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Trivy Results
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-results
+      - name: Evaluate Security Gate
+        run: |
+          echo "Evaluating vulnerabilities..."
+          # Mock security gate logic checking the json
+          CRITICAL=$(cat trivy-results.json | grep -o -i "CRITICAL" | wc -l || true)
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "Security Gate Failed: Found $CRITICAL critical vulnerabilities."
+            exit 1
+          else
+            echo "Security Gate Passed!"
+          fi
+
+  # 9. Push Image
+  push-image:
+    name: Push Image to Registry
+    needs: security-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and tag image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/hey-cicd:${{ github.sha }} -t ${{ secrets.DOCKERHUB_USERNAME }}/hey-cicd:latest .
+      - name: Push image
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/hey-cicd:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/hey-cicd:latest
+
+  # 10. Deploy to Kubernetes
+  deploy-k8s:
+    name: Deploy to Kubernetes
+    needs: push-image
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Create k8s Kind Cluster (For testing deployment)
+        uses: helm/kind-action@v1.10.0
+      - name: Update deployment with new image tag
+        run: sed -i "s|__IMAGE_TAG__|${{ github.sha }}|g" k8s/deployment.yaml
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+      - name: Check rollout status
+        run: kubectl rollout status deployment/session17-python --timeout=60s
